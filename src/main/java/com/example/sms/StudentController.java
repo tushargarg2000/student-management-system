@@ -1,6 +1,9 @@
 package com.example.sms;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -9,53 +12,67 @@ import java.util.HashMap;
 public class StudentController {
 
 
+    @Autowired //Automatically takes care of the StudentService Object Creation
+    StudentService studentService; //Object has been created --> so that it can call the functions
+
     //Database
-    HashMap<Integer,Student> studentDb = new HashMap<>();
 
 
     //Add a Student
     @PostMapping("/add_student")
-    public String addStudent(@RequestBody() Student student){
+    public ResponseEntity<String> addStudent(@RequestBody() Student student){
 
-        //Add it to our db
-
-        int key = student.id;
-
-        //Add it to the studentDb
-        studentDb.put(key,student);
-
-        return "Student added successfully";
+        //Calling the
+        String response = studentService.addStudent(student);
+        return new ResponseEntity<>(response,HttpStatus.CREATED);
 
     }
+
+
 
     //Get a Student by id
     @GetMapping("get_student_by_id")
-    public Student getStudentById(@RequestParam("id")Integer id){
+    public ResponseEntity<Student> getStudentById(@RequestParam("id")Integer id){
 
-        return studentDb.get(id);
+
+        //Call the Service Layer
+        Student resultStudent = studentService.getStudentById(id);
+
+        if(resultStudent==null){
+            return new ResponseEntity<>(resultStudent,HttpStatus.BAD_REQUEST);
+        }
+        else
+            return new ResponseEntity<>(resultStudent,HttpStatus.OK);
     }
 
     @GetMapping("/get_by_path/{id}")
-    public Student getByPath(@PathVariable("id")Integer id){
+    public ResponseEntity<Student> getByPath(@PathVariable("id")Integer id){
 
-        Student student = studentDb.get(id);
-        return student;
+        //Calling the Service Layer
+
+        //We are retutilizing these functions ---> of the service and repository layer
+        Student resultStudent = studentService.getStudentById(id);
+
+        if(resultStudent==null){
+            return new ResponseEntity<>(resultStudent,HttpStatus.BAD_REQUEST);
+        }
+        else
+            return new ResponseEntity<>(resultStudent,HttpStatus.OK);
+
+
     }
 
     //Get a student by Name
     @GetMapping("/get_student_by_name")
-    public Student getStudentByName(@RequestParam("name")String searchName)
+    public ResponseEntity<Student> getStudentByName(@RequestParam("name")String searchName)
     {
         //Iterate over the hashMap
-        for(Student s:studentDb.values()){
-
-            if(s.name.equals(searchName)){
-                return s;
-            }
-        }
 
         //it means the student is not found
-        return null;
+
+        Student resultantStudent = studentService.getStudentByName(searchName);
+
+        return new ResponseEntity<>(resultantStudent,HttpStatus.NOT_FOUND);
     }
 
 
@@ -63,24 +80,20 @@ public class StudentController {
 
     //Update a Student
     @PutMapping("/update_student")
-    public Student updateStudent(@RequestBody()Student student){
+    public ResponseEntity<Student> updateStudent(@RequestBody()Student student){
 
         //Get the key
-        int key = student.id;
-
-        studentDb.put(key,student);
-
-        return student;
+        return new ResponseEntity<>(studentService.updateStudent(student),HttpStatus.ACCEPTED);
     }
 
 
-    //Delete a student
+    //Delete a student ----> H.W
     @DeleteMapping("/delete_student")
-    public String deleteStudent(@RequestParam("id")Integer id){
+    public ResponseEntity<String> deleteStudent(@RequestParam("id")Integer id){
 
         studentDb.remove(id);
 
-        return "The student has been successfully removed ";
+        return new ResponseEntity<>("The student has been deleted", HttpStatus.OK);
     }
 
 }
